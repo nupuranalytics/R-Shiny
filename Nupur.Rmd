@@ -1,0 +1,49 @@
+---
+title: "Showing Animated Plot"
+author: "Nupur"
+date: "12/11/2020"
+output: html_document
+---
+
+```{r echo=FALSE , warning=FALSE}
+library(leaflet)
+library(stringr)
+library(scales)
+library(rbokeh)
+library(dplyr)
+
+property_org <- data.frame(read.csv("10_Property_stolen_and_recovered.csv",stringsAsFactors = T))
+location_org <- data.frame(read.csv("poptable.csv", stringsAsFactors = T))
+property<- property_org 
+location <- location_org
+location$State.Name <- tolower(location$State.Name)
+property$Area_Name <- tolower(property$Area_Name)
+location$State.Name = trimws(location$State.Name,which = "right")
+location$State.Name[location$State.Name == "andaman and nicobar"] = paste("andaman and nicobar", "islands")
+location$State.Name <-str_replace_all(location$State.Name, " and ", " & ")
+merged_data_org <- inner_join(property, location,keep = T, by = c('Area_Name' = 'State.Name'), na_matches = c('na','never'))
+merged_data_org$Area_Name<-as.factor(merged_data_org$Area_Name)
+merged_data <- merged_data_org
+```
+
+## Analysing Property Recovered, Stolen and It's Values Across the States of India
+
+```{r echo=FALSE , warning=FALSE}
+
+figure() %>%
+  ly_points(Cases_Property_Recovered, Cases_Property_Stolen, data=merged_data,
+            color = Area_Name, glyph = Area_Name, xlab = "Property Recovered", ylab = "Property Stolen",
+            hover = list(Group_Name, Sub_Group_Name,Value_of_Property_Recovered,Value_of_Property_Stolen))
+
+```
+
+## Showing the number of property cases recovered by sub group name states wise
+
+
+```{r pressure, echo=FALSE}
+leaflet() %>% addTiles() %>% addMarkers(data = merged_data,lng= ~longitude
+                                        ,lat= ~latitude
+                                        ,popup = ~paste(Sub_Group_Name,': ',Cases_Property_Recovered,sep = ''))
+
+```
+
